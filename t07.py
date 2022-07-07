@@ -6,10 +6,14 @@ import lib.config_settings as _cs
 _settings = _cs.Settings()
 
 import lib.filelib as fl
+import lib.datetime_lib as dt
 
 direc = _settings['mynotes']['direc']
 trash = _settings['mynotes']['trash']
 _backup_dir = _settings['mynotes']['_backup_dir']
+
+session_dir = fl.join(direc,'.Sessions') # containing session directory
+current_session = dt.printable_datetime()
 
 model = None
 tree=None
@@ -94,6 +98,19 @@ def _is_txt_file(filepath):
 def _get_filepath(): #get filepath of currently selected element
     return model.filePath(tree.currentIndex())
 
+prev_txt = ''
+def tracking(pos,rem,add):
+    global prev_txt
+    current_txt = display.toPlainText()
+    if add>0: #if add
+        print('What was added: ', current_txt[pos:pos+add])
+        fl.append_txt_file(f'Add - {pos} - {add} - {current_txt[pos:pos+add]}',
+                           fl.join(session_dir,current_session,ext='tracking'), newline=True)
+    if rem>0: # if remove
+        print('What was removed: ', prev_txt[pos:pos+rem])
+        fl.append_txt_file(f'Rem - {pos} - {rem} - {prev_txt[pos:pos+rem]}',
+                   fl.join(session_dir,current_session,ext='tracking'), newline=True)
+    prev_txt = current_txt
 
 
 
@@ -144,7 +161,7 @@ def notebk():
 
     btn__backup = QPushButton()
     btn__backup.setText("backup")
-    btn__backup.clicked.connect(_backup)
+    btn__backup.clicked.connect(tracking)
 
     btn_layout = QHBoxLayout() #button will run horizontal
 
@@ -168,6 +185,7 @@ def notebk():
     display.setFont(font) #set widget to above size
 
     display.textChanged.connect(_update_file)
+    display.document().contentsChange[int,int,int].connect(tracking)
 
     #LHS of display
     splitter1 = QSplitter(Qt.Vertical) #splitter orientation, default is horizon
@@ -191,6 +209,7 @@ def notebk():
     window.show()
     qapp.exec_()
 
+    fl.save_txt_file('',fl.join(session_dir,current_session,ext='tracking')) #create file to keep session info
 
 if __name__ == "__main__":
     notebk()
