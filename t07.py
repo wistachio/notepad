@@ -112,7 +112,17 @@ def tracking(pos,rem,add):
                    fl.join(session_dir,current_session,ext='tracking'), newline=True)
     prev_txt = current_txt
 
-
+def menu_context(event):
+    menu = QMenu(tree)
+    a = menu.addAction("Delete")
+    b = menu.addAction("Rename")
+    b = menu.addAction("Add File")
+    b = menu.addAction("Add Folder")
+    action2 = menu.exec_(tree.mapToGlobal(event))
+    if action2 is not None:
+        if action2 == a:
+            print('juggy')
+    
 
 def notebk():  
     qapp = QApplication([])
@@ -140,6 +150,9 @@ def notebk():
 
     tree.setSortingEnabled(True)
     tree.sortByColumn(0,Qt.AscendingOrder)
+
+    tree.setContextMenuPolicy(Qt.CustomContextMenu)  
+    tree.customContextMenuRequested.connect(menu_context) 
 
     #create button section
 
@@ -187,6 +200,9 @@ def notebk():
     display.textChanged.connect(_update_file)
     display.document().contentsChange[int,int,int].connect(tracking)
 
+    display.setContextMenuPolicy(Qt.CustomContextMenu)  
+    display.customContextMenuRequested.connect(menu_context) 
+
     #LHS of display
     splitter1 = QSplitter(Qt.Vertical) #splitter orientation, default is horizon
     splitter1.addWidget(btns_widget)
@@ -216,3 +232,45 @@ if __name__ == "__main__":
 
 import lib.metalib as _meta
 exec(_meta.print_funcs('_meta'))
+
+
+
+'''
+import sys
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+
+
+class MainWindow(QWidget):
+     def __init__(self):
+         super(MainWindow, self).__init__()
+         self.resize(400, 300)
+         self.setWindowTitle('Main Window')
+
+         # Menu
+         self.setContextMenuPolicy(Qt.CustomContextMenu)
+         self.customContextMenuRequested.connect(self.right_menu)
+
+     def right_menu(self, pos):
+         menu = QMenu()
+
+         # Add menu options
+         hello_option = menu.addAction('Hello World')
+         goodbye_option = menu.addAction('GoodBye')
+         exit_option = menu.addAction('Exit')
+
+         # Menu option events
+         hello_option.triggered.connect(lambda: print('Hello World'))
+         goodbye_option.triggered.connect(lambda: print('Goodbye'))
+         exit_option.triggered.connect(lambda: exit())
+
+         # Position
+         menu.exec_(self.mapToGlobal(pos))
+
+
+if __name__ == '__main__':
+     app = QApplication([])
+     window = MainWindow()
+     window.show()
+     sys.exit(app.exec_())
+'''
