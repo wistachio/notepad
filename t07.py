@@ -1,23 +1,24 @@
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
+from textbox_images import *
+from textbox_shiftclick import *
 
-import lib.config_settings as _cs
+import Git.my_lib.config_settings as _cs
 _settings = _cs.Settings()
 
-import lib.filelib as fl
-import lib.datetime_lib as dt
+import Git.my_lib.filelib as fl
 
 direc = _settings['mynotes']['direc']
 trash = _settings['mynotes']['trash']
 _backup_dir = _settings['mynotes']['_backup_dir']
 
-session_dir = fl.join(direc,'.Sessions') # containing session directory
-current_session = dt.printable_datetime()
-
 model = None
 tree=None
 display=None
+
+class _TextEdit(TextEdit, TextEditor):
+    pass
 
 #if text file, display content
 def _display_file():
@@ -98,26 +99,93 @@ def _is_txt_file(filepath):
 def _get_filepath(): #get filepath of currently selected element
     return model.filePath(tree.currentIndex())
 
-prev_txt = ''
-def tracking(pos,rem,add):
-    global prev_txt
-    current_txt = display.toPlainText()
-    if add>0: #if add
-        print('What was added: ', current_txt[pos:pos+add])
-        fl.append_txt_file(f'Add - {pos} - {add} - {current_txt[pos:pos+add]}',
-                           fl.join(session_dir,current_session,ext='tracking'), newline=True)
-    if rem>0: # if remove
-        print('What was removed: ', prev_txt[pos:pos+rem])
-        fl.append_txt_file(f'Rem - {pos} - {rem} - {prev_txt[pos:pos+rem]}',
-                   fl.join(session_dir,current_session,ext='tracking'), newline=True)
-    prev_txt = current_txt
+c=8
+def test():
+    global c
+
+    print(c)
+    display.setFontPointSize(c)
+    if c==8:
+        c=18
+        print('yyy',c)
+    elif c==18:
+        c=8
+        print('xxx',c)
+    #display.undo()
 
 
+prev_dir = direc
+prev_menu = None
+def display_treeview(event):
+    '''
+display tree view items in menu
+
+for each item in treeview:
+get name (if folder change icon)
+for each folder: get names
+on folder selection: popup name of file to save as
+
+if select folder, save to "incoming" file
+'''
+
+    global prev_dir, prev_menu
+    print('================')
+    d = QDirIterator(direc)
+    root_menu = QMenu(tree)
+    prev_menu = root_menu
+    name=''
+    while d.hasNext():
+        d.next()
+        if d.fileInfo().isFile():
+            name = d.fileName().lower()
+        elif d.fileInfo().isDir():
+            name = d.fileName().upper()
+        else:
+            print('ooops')
+            continue
+        current_dir = d.filePath()
+        print('Previous dir: ', prev_dir)
+        print('Current dir: ',current_dir)
+        print('Name: ', name)
+
+        if current_dir != prev_dir: #if the containing directory has changed
+            if current_dir == direc: #if root dir
+                prev_menu = root_menu
+            else:
+               prev_menu=QMenu(prev_menu)#create new submenu in containing menu
+
+        prev_menu.addAction(name)
+        
+        print('---------------')
+
+
+##    a = menu.addAction("Delete")
+##    b = menu.addAction("Rename")
+##    b = menu.addAction("Add File")
+##    b = menu.addAction("Add Folder")
+        root_menu.exec_(display.mapToGlobal(event))
+##    if action2 is not None:
+##        if action2 == 'a':
+##            print('juggy')
+    
+
+##    for a in d:
+##        print('q')
+##    for item in QDirIterator(direc, QDirIterator.Subdirectories):
+##        print(2)
+##        print(type(item))
+##        print(item)
+
+def curse():
+    cursor = display.textCursor()
+    img = r"C:\Users\jss-e\Downloads\bdb4b990d1579a6dca05556d5d595172.jpg"
+    cursor.insertText('\n')
+    cursor.insertImage(img)
 
 def notebk():  
     qapp = QApplication([])
     window = QWidget()
-    window.setGeometry(QRect(1900, 50, 1900, 2150)) ###locx,loc,wi,h
+    window.setGeometry(QRect(0, 35, 1300, 995)) ###locx,loc,wi,h
 
 
     ## tree
@@ -161,7 +229,7 @@ def notebk():
 
     btn__backup = QPushButton()
     btn__backup.setText("backup")
-    btn__backup.clicked.connect(tracking)
+    btn__backup.clicked.connect(display_treeview)
 
     btn_layout = QHBoxLayout() #button will run horizontal
 
@@ -177,7 +245,7 @@ def notebk():
 
     #set up textbox to display text
     global display
-    display = QTextEdit()
+    display = _TextEdit()
 
     font = display.font() #create font obj
     font.setPointSize(14) #set font obj size
@@ -185,7 +253,11 @@ def notebk():
     display.setFont(font) #set widget to above size
 
     display.textChanged.connect(_update_file)
-    display.document().contentsChange[int,int,int].connect(tracking)
+
+    display.setContextMenuPolicy(Qt.CustomContextMenu)  
+    display.customContextMenuRequested.connect(display_treeview) 
+
+    #display.undo.connect(test)
 
     #LHS of display
     splitter1 = QSplitter(Qt.Vertical) #splitter orientation, default is horizon
@@ -199,6 +271,8 @@ def notebk():
     splitter2.addWidget(display)
     splitter2.setSizes([500, 600])
 
+    
+
 
     hbox = QHBoxLayout()
 
@@ -208,8 +282,6 @@ def notebk():
 
     window.show()
     qapp.exec_()
-
-    fl.save_txt_file('',fl.join(session_dir,current_session,ext='tracking')) #create file to keep session info
 
 if __name__ == "__main__":
     notebk()
