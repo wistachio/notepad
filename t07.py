@@ -18,7 +18,9 @@ tree=None
 display=None
 
 class _TextEdit(TextEdit, TextEditor):
-    pass
+##    pass
+    def __init__(self):
+        super().__init__()
 
 #if text file, display content
 def _display_file():
@@ -113,6 +115,31 @@ def test():
         print('xxx',c)
     #display.undo()
 
+print(1)
+
+def f():
+    print('in f function')
+
+class T2(QTextEdit):
+    click_signal = pyqtSignal() #setup custom signal when right click
+
+    def __init__(self):
+        super().__init__()
+
+    def g(self):
+        print('in g function')
+        self.click_signal.emit()
+        
+print(3)
+t2 = T2(QWidget)
+print(4)
+t2.click_signal.connect(f)
+print(5)
+
+print(2)
+        
+def display_treeview2(text):
+    print(text)
 
 prev_dir = direc
 prev_menu = None
@@ -130,6 +157,7 @@ if select folder, save to "incoming" file
 
     global prev_dir, prev_menu
     print('================')
+    print(event)
     d = QDirIterator(direc)
     root_menu = QMenu(tree)
     prev_menu = root_menu
@@ -253,9 +281,10 @@ def notebk():
     display.setFont(font) #set widget to above size
 
     display.textChanged.connect(_update_file)
+    display.right_click_signal[str].connect(display_treeview)
 
-    display.setContextMenuPolicy(Qt.CustomContextMenu)  
-    display.customContextMenuRequested.connect(display_treeview) 
+    #display.setContextMenuPolicy(Qt.CustomContextMenu)  
+    #display.customContextMenuRequested.connect(display_treeview) 
 
     #display.undo.connect(test)
 
